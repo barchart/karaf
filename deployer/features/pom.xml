@@ -29,6 +29,7 @@
     </parent>
 
     <artifactId>org.apache.karaf.deployer.features</artifactId>
+	<version>3.0.0-patch1-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Apache Karaf :: Deployer :: Features</name>
     <description>This deployer can deploy features descriptor on the fly</description>
