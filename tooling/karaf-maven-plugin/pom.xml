@@ -44,6 +44,19 @@
 		<tag>patch-release</tag>
 	</scm>
 
+	<distributionManagement>
+		<snapshotRepository>
+			<id>barchart-nexus-snapshots</id>
+			<name>Barchart Nexus Snapshots</name>
+			<url>https://nexus.barchart.com/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>barchart-nexus-releases</id>
+			<name>Barchart Nexus Releases</name>
+			<url>https://nexus.barchart.com/content/repositories/releases</url>
+		</repository>
+	</distributionManagement>
+
     <dependencies>
 
         <dependency>
