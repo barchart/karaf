@@ -34,6 +34,13 @@
     <name>Apache Karaf :: Deployer :: Features</name>
     <description>This deployer can deploy features descriptor on the fly</description>
 
+	<scm>
+		<url>https://github.com/barchart/karaf</url>
+		<connection>scm:git:git://github.com/barchart/karaf.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/barchart/karaf.git</developerConnection>
+		<tag>patch-release</tag>
+	</scm>
+
     <properties>
         <appendedResourcesDirectory>${basedir}/../../etc/appended-resources</appendedResourcesDirectory>
     </properties>

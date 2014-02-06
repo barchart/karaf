@@ -37,6 +37,13 @@
         <appendedResourcesDirectory>${basedir}/../../etc/appended-resources</appendedResourcesDirectory>
     </properties>
 
+	<scm>
+		<url>https://github.com/barchart/karaf</url>
+		<connection>scm:git:git://github.com/barchart/karaf.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/barchart/karaf.git</developerConnection>
+		<tag>patch-release</tag>
+	</scm>
+
     <dependencies>
 
         <dependency>
