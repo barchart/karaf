@@ -29,7 +29,7 @@
     </parent>
 
     <artifactId>org.apache.karaf.deployer.features</artifactId>
-	<version>3.0.0-patch2-SNAPSHOT</version>
+	<version>3.0.0-patch2</version>
     <packaging>bundle</packaging>
     <name>Apache Karaf :: Deployer :: Features</name>
     <description>This deployer can deploy features descriptor on the fly</description>
@@ -38,7 +38,7 @@
 		<url>https://github.com/barchart/karaf</url>
 		<connection>scm:git:git://github.com/barchart/karaf.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/barchart/karaf.git</developerConnection>
-		<tag>patch-release</tag>
+		<tag>org.apache.karaf.deployer.features-3.0.0-patch2</tag>
 	</scm>
 
     <properties>
