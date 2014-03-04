@@ -29,7 +29,7 @@
     </parent>
 
     <artifactId>karaf-maven-plugin</artifactId>
-	<version>3.0.0-patch3</version>
+	<version>3.0.0-patch4-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Apache Karaf :: Tooling :: Maven Karaf Plugin</name>
 
@@ -41,7 +41,7 @@
 		<url>https://github.com/barchart/karaf</url>
 		<connection>scm:git:git://github.com/barchart/karaf.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/barchart/karaf.git</developerConnection>
-		<tag>karaf-maven-plugin-3.0.0-patch3</tag>
+		<tag>patch-release</tag>
 	</scm>
 
 	<distributionManagement>
