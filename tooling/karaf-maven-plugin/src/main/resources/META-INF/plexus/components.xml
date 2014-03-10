@@ -69,7 +69,7 @@
                                 org.apache.maven.plugins:maven-resources-plugin:resources
                             </process-resources>
                             <compile>
-                                org.apache.karaf.tooling:karaf-maven-plugin:features-generate-descriptor
+                                org.apache.karaf.tooling:karaf-maven-plugin:features-generate-semantic
                             </compile>
                             <package>
                                 org.apache.karaf.tooling:karaf-maven-plugin:features-create-kar
