@@ -153,11 +153,23 @@
             <groupId>org.apache.karaf.deployer</groupId>
             <artifactId>org.apache.karaf.deployer.features</artifactId>
             <version>[3.0.0-patch1,3.0.1-SNAPSHOT)</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.karaf.features</groupId>
+                    <artifactId>org.apache.karaf.features.core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.karaf.deployer</groupId>
             <artifactId>org.apache.karaf.deployer.kar</artifactId>
 	        <version>3.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.karaf.kar</groupId>
+                    <artifactId>org.apache.karaf.kar.core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.karaf.kar</groupId>
@@ -169,14 +181,30 @@
             <artifactId>org.apache.servicemix.bundles.ant</artifactId>
         </dependency>
         <dependency>
-          <groupId>org.apache.karaf.shell</groupId>
-          <artifactId>org.apache.karaf.shell.console</artifactId>
-	        <version>3.0.0</version>
+			<groupId>org.apache.karaf.shell</groupId>
+			<artifactId>org.apache.karaf.shell.console</artifactId>
+			<version>3.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.karaf.jaas</groupId>
+                    <artifactId>org.apache.karaf.jaas.modules</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.karaf.jaas</groupId>
+                    <artifactId>org.apache.karaf.jaas.boot</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.karaf.jaas</groupId>
             <artifactId>org.apache.karaf.jaas.modules</artifactId>
 	        <version>3.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.karaf.jaas</groupId>
+                    <artifactId>org.apache.karaf.jaas.config</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.karaf.jaas</groupId>
