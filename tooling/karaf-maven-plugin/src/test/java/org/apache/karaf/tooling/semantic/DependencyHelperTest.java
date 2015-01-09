@@ -42,6 +42,7 @@ import org.eclipse.aether.util.graph.selector.ExclusionDependencySelector;
 import org.eclipse.aether.util.graph.selector.OptionalDependencySelector;
 import org.eclipse.aether.util.graph.selector.ScopeDependencySelector;
 import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class DependencyHelperTest {
@@ -62,6 +63,7 @@ public class DependencyHelperTest {
 
 	}
 
+	@Ignore
 	@Test
 	public void dependency() throws Exception {
 

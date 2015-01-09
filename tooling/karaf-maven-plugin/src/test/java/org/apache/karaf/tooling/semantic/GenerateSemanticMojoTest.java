@@ -31,6 +31,7 @@ import org.codehaus.plexus.logging.Logger;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class GenerateSemanticMojoTest {
@@ -93,6 +94,7 @@ public class GenerateSemanticMojoTest {
 
 	}
 
+	@Ignore
 	@Test
 	public void dependency2() throws Exception {
 
