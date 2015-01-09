@@ -18,6 +18,8 @@
  */
 package org.apache.karaf.tooling.features;
 
+import static org.apache.karaf.deployer.kar.KarArtifactInstaller.FEATURE_CLASSIFIER;
+
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,28 +29,30 @@ import java.util.Set;
 import org.apache.maven.RepositoryUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.collection.CollectRequest;
-import org.sonatype.aether.collection.CollectResult;
-import org.sonatype.aether.collection.DependencyCollectionContext;
-import org.sonatype.aether.collection.DependencyCollectionException;
-import org.sonatype.aether.collection.DependencyGraphTransformer;
-import org.sonatype.aether.collection.DependencySelector;
-import org.sonatype.aether.graph.Dependency;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.util.DefaultRepositorySystemSession;
-import org.sonatype.aether.util.graph.selector.AndDependencySelector;
-import org.sonatype.aether.util.graph.selector.ExclusionDependencySelector;
-import org.sonatype.aether.util.graph.selector.OptionalDependencySelector;
-import org.sonatype.aether.util.graph.transformer.ChainedDependencyGraphTransformer;
-import org.sonatype.aether.util.graph.transformer.ConflictMarker;
-import org.sonatype.aether.util.graph.transformer.JavaDependencyContextRefiner;
-import org.sonatype.aether.util.graph.transformer.JavaEffectiveScopeCalculator;
-
-import static org.apache.karaf.deployer.kar.KarArtifactInstaller.FEATURE_CLASSIFIER;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.collection.CollectResult;
+import org.eclipse.aether.collection.DependencyCollectionContext;
+import org.eclipse.aether.collection.DependencyCollectionException;
+import org.eclipse.aether.collection.DependencyGraphTransformer;
+import org.eclipse.aether.collection.DependencySelector;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.util.graph.selector.AndDependencySelector;
+import org.eclipse.aether.util.graph.selector.ExclusionDependencySelector;
+import org.eclipse.aether.util.graph.selector.OptionalDependencySelector;
+import org.eclipse.aether.util.graph.transformer.ChainedDependencyGraphTransformer;
+import org.eclipse.aether.util.graph.transformer.ConflictMarker;
+import org.eclipse.aether.util.graph.transformer.ConflictResolver;
+import org.eclipse.aether.util.graph.transformer.JavaDependencyContextRefiner;
+import org.eclipse.aether.util.graph.transformer.JavaScopeDeriver;
+import org.eclipse.aether.util.graph.transformer.JavaScopeSelector;
+import org.eclipse.aether.util.graph.transformer.NearestVersionSelector;
+import org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector;
 
 public class DependencyHelper {
 
@@ -83,7 +87,7 @@ public class DependencyHelper {
     //log of what happened during search
     protected String treeListing;
 
-    public DependencyHelper(List<RemoteRepository> projectRepos, RepositorySystemSession repoSession, RepositorySystem repoSystem) {
+    public DependencyHelper(final List<RemoteRepository> projectRepos, final RepositorySystemSession repoSession, final RepositorySystem repoSystem) {
         this.projectRepos = projectRepos;
         this.repoSession = repoSession;
         this.repoSystem = repoSystem;
@@ -99,30 +103,31 @@ public class DependencyHelper {
 
     //artifact search code adapted from geronimo car plugin
 
-    public void getDependencies(MavenProject project, boolean useTransitiveDependencies) throws MojoExecutionException {
+    public void getDependencies(final MavenProject project, final boolean useTransitiveDependencies) throws MojoExecutionException {
 
-        DependencyNode rootNode = getDependencyTree(RepositoryUtils.toArtifact(project.getArtifact()));
+        final DependencyNode rootNode = getDependencyTree(RepositoryUtils.toArtifact(project.getArtifact()));
 
-        Scanner scanner = new Scanner();
+        final Scanner scanner = new Scanner();
         scanner.scan(rootNode, useTransitiveDependencies);
         localDependencies = scanner.localDependencies;
         treeListing = scanner.getLog();
     }
 
-    private DependencyNode getDependencyTree(Artifact artifact) throws MojoExecutionException {
+    private DependencyNode getDependencyTree(final Artifact artifact) throws MojoExecutionException {
         try {
-            CollectRequest collectRequest = new CollectRequest(new Dependency(artifact, "compile"), null, projectRepos);
-            DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repoSession);
+            final CollectRequest collectRequest = new CollectRequest(new Dependency(artifact, "compile"), null, projectRepos);
+            final DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repoSession);
             session.setDependencySelector(new AndDependencySelector(new OptionalDependencySelector(),
                     new ScopeDependencySelector1(),
                     new ExclusionDependencySelector()));
-            DependencyGraphTransformer transformer = new ChainedDependencyGraphTransformer(new ConflictMarker(),
-                    new JavaEffectiveScopeCalculator(),
+            final DependencyGraphTransformer transformer = new ChainedDependencyGraphTransformer(new ConflictMarker(),
+							new ConflictResolver(new NearestVersionSelector(), new JavaScopeSelector(),
+									new SimpleOptionalitySelector(), new JavaScopeDeriver()),
                     new JavaDependencyContextRefiner());
             session.setDependencyGraphTransformer(transformer);
-            CollectResult result = repoSystem.collectDependencies(session, collectRequest);
+            final CollectResult result = repoSystem.collectDependencies(session, collectRequest);
             return result.getRoot();
-        } catch (DependencyCollectionException e) {
+        } catch (final DependencyCollectionException e) {
             throw new MojoExecutionException("Cannot build project dependency tree", e);
         }
     }
@@ -134,11 +139,13 @@ public class DependencyHelper {
 
         private DependencySelector child = new ScopeDependencySelector2();
 
-        public boolean selectDependency(Dependency dependency) {
+        @Override
+		public boolean selectDependency(final Dependency dependency) {
             throw new IllegalStateException("this does not appear to be called");
         }
 
-        public DependencySelector deriveChildSelector(DependencyCollectionContext context) {
+        @Override
+		public DependencySelector deriveChildSelector(final DependencyCollectionContext context) {
             return child;
         }
     }
@@ -147,24 +154,28 @@ public class DependencyHelper {
 
         private DependencySelector child = new ScopeDependencySelector3();
 
-        public boolean selectDependency(Dependency dependency) {
-            String scope = dependency.getScope();
+        @Override
+		public boolean selectDependency(final Dependency dependency) {
+            final String scope = dependency.getScope();
             return !"test".equals(scope) && !"runtime".equals(scope);
         }
 
-        public DependencySelector deriveChildSelector(DependencyCollectionContext context) {
+        @Override
+		public DependencySelector deriveChildSelector(final DependencyCollectionContext context) {
             return child;
         }
     }
 
     private static class ScopeDependencySelector3 implements DependencySelector {
 
-        public boolean selectDependency(Dependency dependency) {
-            String scope = dependency.getScope();
+        @Override
+		public boolean selectDependency(final Dependency dependency) {
+            final String scope = dependency.getScope();
             return !"test".equals(scope) && !"provided".equals(scope) && !"runtime".equals(scope);
         }
 
-        public DependencySelector deriveChildSelector(DependencyCollectionContext context) {
+        @Override
+		public DependencySelector deriveChildSelector(final DependencyCollectionContext context) {
             return this;
         }
     }
@@ -179,7 +190,7 @@ public class DependencyHelper {
             private final boolean more;
             private final boolean local;
 
-            private Accept(boolean more, boolean local) {
+            private Accept(final boolean more, final boolean local) {
                 this.more = more;
                 this.local = local;
             }
@@ -200,8 +211,8 @@ public class DependencyHelper {
 
         private final StringBuilder log = new StringBuilder();
 
-        public void scan(DependencyNode rootNode, boolean useTransitiveDependencies) throws MojoExecutionException {
-            for (DependencyNode child : rootNode.getChildren()) {
+        public void scan(final DependencyNode rootNode, final boolean useTransitiveDependencies) throws MojoExecutionException {
+            for (final DependencyNode child : rootNode.getChildren()) {
                 scan(child, Accept.ACCEPT, useTransitiveDependencies, false, "");
             }
             if (useTransitiveDependencies) {
@@ -209,10 +220,10 @@ public class DependencyHelper {
             }
         }
 
-        private void scan(DependencyNode dependencyNode, Accept parentAccept, boolean useTransitiveDependencies, boolean isFromFeature, String indent) throws MojoExecutionException {
+        private void scan(final DependencyNode dependencyNode, final Accept parentAccept, final boolean useTransitiveDependencies, boolean isFromFeature, final String indent) throws MojoExecutionException {
 //            Artifact artifact = getArtifact(rootNode);
 
-            Accept accept = accept(dependencyNode, parentAccept);
+            final Accept accept = accept(dependencyNode, parentAccept);
             if (accept.isLocal()) {
                 if (isFromFeature) {
                     if (!isFeature(dependencyNode)) {
@@ -234,8 +245,8 @@ public class DependencyHelper {
                     }
                 }
                 if (useTransitiveDependencies && accept.isContinue()) {
-                    List<DependencyNode> children = dependencyNode.getChildren();
-                    for (DependencyNode child : children) {
+                    final List<DependencyNode> children = dependencyNode.getChildren();
+                    for (final DependencyNode child : children) {
                         scan(child, accept, useTransitiveDependencies, isFromFeature, indent + "  ");
                     }
                 }
@@ -247,8 +258,8 @@ public class DependencyHelper {
             return log.toString();
         }
 
-        private Accept accept(DependencyNode dependency, Accept previous) {
-            String scope = dependency.getDependency().getScope();
+        private Accept accept(final DependencyNode dependency, final Accept previous) {
+            final String scope = dependency.getDependency().getScope();
             if (scope == null || "runtime".equalsIgnoreCase(scope) || "compile".equalsIgnoreCase(scope)) {
                 return previous;
             }
@@ -260,11 +271,11 @@ public class DependencyHelper {
 
     }
 
-    public static boolean isFeature(DependencyNode dependencyNode) {
+    public static boolean isFeature(final DependencyNode dependencyNode) {
         return isFeature(dependencyNode.getDependency().getArtifact());
     }
 
-    public static boolean isFeature(Artifact artifact) {
+    public static boolean isFeature(final Artifact artifact) {
         return artifact.getExtension().equals("kar") || FEATURE_CLASSIFIER.equals(artifact.getClassifier());
     }
 

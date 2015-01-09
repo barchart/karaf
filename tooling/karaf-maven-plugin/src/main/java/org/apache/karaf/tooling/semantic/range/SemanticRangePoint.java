@@ -1,18 +1,17 @@
 package org.apache.karaf.tooling.semantic.range;
 
-import org.sonatype.aether.version.Version;
-import org.sonatype.aether.version.VersionRange;
+import org.eclipse.aether.version.Version;
 
 public class SemanticRangePoint extends SemanticRangeBase {
 
 	private final Version version;
 
-	public SemanticRangePoint(Version version) {
+	public SemanticRangePoint(final Version version) {
 		this.version = version;
 	}
 
 	@Override
-	public boolean containsVersion(Version version) {
+	public boolean containsVersion(final Version version) {
 		return this.version.equals(version);
 	}
 
@@ -26,6 +25,7 @@ public class SemanticRangePoint extends SemanticRangeBase {
 		return new Bound(version, true);
 	}
 
+	@Override
 	public String toString() {
 		return "[" + version + "," + version + "]";
 	}

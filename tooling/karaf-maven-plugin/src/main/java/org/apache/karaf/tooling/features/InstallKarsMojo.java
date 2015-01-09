@@ -57,13 +57,13 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactRequest;
-import org.sonatype.aether.resolution.ArtifactResolutionException;
-import org.sonatype.aether.resolution.ArtifactResult;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
  * Installs kar dependencies into a server-under-construction in target/assembly
@@ -191,13 +191,13 @@ public class InstallKarsMojo extends MojoSupport {
         system = systemDirectory.toURI();
         if (startupPropertiesFile.exists()) {
             try {
-                InputStream in = new FileInputStream(startupPropertiesFile);
+                final InputStream in = new FileInputStream(startupPropertiesFile);
                 try {
                     startupProperties.load(in);
                 } finally {
                     in.close();
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new MojoFailureException("Could not open existing startup.properties file at " + startupPropertiesFile, e);
             }
         } else {
@@ -207,52 +207,52 @@ public class InstallKarsMojo extends MojoSupport {
             }
         }
 
-        FeaturesService featuresService = new OfflineFeaturesService();
+        final FeaturesService featuresService = new OfflineFeaturesService();
 
-        Collection<Artifact> dependencies = project.getDependencyArtifacts();
-        StringBuilder buf = new StringBuilder();
+        final Collection<Artifact> dependencies = project.getDependencyArtifacts();
+        final StringBuilder buf = new StringBuilder();
         for (Artifact artifact : dependencies) {
             dontAddToStartup = "runtime".equals(artifact.getScope());
             if ("kar".equals(artifact.getType()) && acceptScope(artifact)) {
-                File file = artifact.getFile();
+                final File file = artifact.getFile();
                 try {
-                    Kar kar = new Kar(file.toURI());
+                    final Kar kar = new Kar(file.toURI());
                     kar.extract(new File(system.getPath()), new File(workDirectory));
-                    for (URI repoUri : kar.getFeatureRepos()) {
+                    for (final URI repoUri : kar.getFeatureRepos()) {
                         featuresService.removeRepository(repoUri);
                         featuresService.addRepository(repoUri);
                     }
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     throw new RuntimeException("Could not install kar: " + artifact.toString() + "\n", e);
                     //buf.append("Could not install kar: ").append(artifact.toString()).append("\n");
                     //buf.append(e.getMessage()).append("\n\n");
                 }
             }
             if ("features".equals(artifact.getClassifier()) && acceptScope(artifact)) {
-                String uri = MavenUtil.artifactToMvn(artifact);
+                final String uri = MavenUtil.artifactToMvn(artifact);
 
-                File source = artifact.getFile();
-                DefaultRepositoryLayout layout = new DefaultRepositoryLayout();
+                final File source = artifact.getFile();
+                final DefaultRepositoryLayout layout = new DefaultRepositoryLayout();
 
                 //remove timestamp version
                 artifact = factory.createArtifactWithClassifier(artifact.getGroupId(), artifact.getArtifactId(), artifact.getBaseVersion(), artifact.getType(), artifact.getClassifier());
-                File target = new File(system.resolve(layout.pathOf(artifact)));
+                final File target = new File(system.resolve(layout.pathOf(artifact)));
 
                 if (!target.exists()) {
                     target.getParentFile().mkdirs();
                     try {
                         copy(source, target);
-                    } catch (RuntimeException e) {
+                    } catch (final RuntimeException e) {
                         getLog().error("Could not copy features " + uri + " from source file " + source, e);
                     }
 
                     // for snapshot, generate the repository metadata in order to avoid override of snapshot from remote repositories
                     if (artifact.isSnapshot()) {
                         getLog().debug("Feature " + uri + " is a SNAPSHOT, generate the maven-metadata-local.xml file");
-                        File metadataTarget = new File(target.getParentFile(), "maven-metadata-local.xml");
+                        final File metadataTarget = new File(target.getParentFile(), "maven-metadata-local.xml");
                         try {
                             MavenUtil.generateMavenMetadata(artifact, metadataTarget);
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             getLog().warn("Could not create maven-metadata-local.xml", e);
                             getLog().warn("It means that this SNAPSHOT could be overwritten by an older one present on remote repositories");
                         }
@@ -261,7 +261,7 @@ public class InstallKarsMojo extends MojoSupport {
                 }
                 try {
                     featuresService.addRepository(URI.create(uri));
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     buf.append("Could not install feature: ").append(artifact.toString()).append("\n");
                     buf.append(e.getMessage()).append("\n\n");
                 }
@@ -269,32 +269,32 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         // install bundles listed in startup properties that weren't in kars into the system dir
-        Set<?> keySet = startupProperties.keySet();
-        for (Object keyObject : keySet) {
-            String key = (String) keyObject;
-            String path = MavenUtil.pathFromMaven(key);
-            File target = new File(system.resolve(path));
+        final Set<?> keySet = startupProperties.keySet();
+        for (final Object keyObject : keySet) {
+            final String key = (String) keyObject;
+            final String path = MavenUtil.pathFromMaven(key);
+            final File target = new File(system.resolve(path));
             if (!target.exists()) {
                 install(key, target);
             }
         }
 
         // install bundles listed in install features not in system
-        for (Feature feature : localRepoFeatures) {
-            for (Bundle bundle : feature.getBundle()) {
+        for (final Feature feature : localRepoFeatures) {
+            for (final Bundle bundle : feature.getBundle()) {
                 if (!bundle.isDependency()) {
-                    String key = bundle.getLocation();
-                    String path = MavenUtil.pathFromMaven(key);
-                    File test = new File(system.resolve(path));
+                    final String key = bundle.getLocation();
+                    final String path = MavenUtil.pathFromMaven(key);
+                    final File test = new File(system.resolve(path));
                     if (!test.exists()) {
-                        File target = new File(system.resolve(path));
+                        final File target = new File(system.resolve(path));
                         if (!target.exists()) {
                             install(key, target);
-                            Artifact artifact = MavenUtil.mvnToArtifact(key);
+                            final Artifact artifact = MavenUtil.mvnToArtifact(key);
                             if (artifact.isSnapshot()) {
                                 // generate maven-metadata-local.xml for the artifact
-                                File metadataSource = new File(resolve(key).getParentFile(), "maven-metadata-local.xml");
-                                File metadataTarget = new File(target.getParentFile(), "maven-metadata-local.xml");
+                                final File metadataSource = new File(resolve(key).getParentFile(), "maven-metadata-local.xml");
+                                final File metadataTarget = new File(target.getParentFile(), "maven-metadata-local.xml");
                                 metadataTarget.getParentFile().mkdirs();
                                 try {
                                     if (!metadataSource.exists()) {
@@ -304,7 +304,7 @@ public class InstallKarsMojo extends MojoSupport {
                                         // copy the metadata to the target
                                         copy(metadataSource, metadataTarget);
                                     }
-                                } catch (IOException ioException) {
+                                } catch (final IOException ioException) {
                                     getLog().warn(ioException);
                                     getLog().warn("Unable to copy the maven-metadata-local.xml, it means that this SNAPSHOT will be overwritten by a remote one (if exist)");
                                 }
@@ -316,13 +316,13 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         try {
-            OutputStream out = new FileOutputStream(startupPropertiesFile);
+            final OutputStream out = new FileOutputStream(startupPropertiesFile);
             try {
                 startupProperties.save(out);
             } finally {
                 out.close();
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new MojoFailureException("Could not write startup.properties file at " + startupPropertiesFile, e);
         }
         if (buf.length() > 0) {
@@ -330,19 +330,19 @@ public class InstallKarsMojo extends MojoSupport {
         }
     }
 
-    private void install(String key, File target) throws MojoFailureException {
-        File source = resolve(key);
+    private void install(final String key, final File target) throws MojoFailureException {
+        final File source = resolve(key);
         target.getParentFile().mkdirs();
         copy(source, target);
     }
-    
-    private boolean acceptScope(Artifact artifact) {
+
+    private boolean acceptScope(final Artifact artifact) {
         return "compile".equals(artifact.getScope()) || "runtime".equals(artifact.getScope());
     }
 
     public File resolve(String id) throws MojoFailureException {
         id = MavenUtil.mvnToAether(id);
-        ArtifactRequest request = new ArtifactRequest();
+        final ArtifactRequest request = new ArtifactRequest();
         request.setArtifact(new DefaultArtifact(id));
         request.setRepositories(remoteRepos);
 
@@ -352,7 +352,7 @@ public class InstallKarsMojo extends MojoSupport {
         ArtifactResult result;
         try {
             result = repoSystem.resolveArtifact(repoSession, request);
-        } catch (ArtifactResolutionException e) {
+        } catch (final ArtifactResolutionException e) {
             getLog().warn("could not resolve " + id, e);
             throw new MojoFailureException(format("Couldn't resolve artifact %s", id), e);
         }
@@ -368,16 +368,16 @@ public class InstallKarsMojo extends MojoSupport {
         private static final String FEATURES_BOOT = "featuresBoot";
 
         @Override
-        public void validateRepository(URI uri) throws Exception {
+        public void validateRepository(final URI uri) throws Exception {
         }
 
         @Override
-        public void addRepository(URI uri) throws Exception {
+        public void addRepository(final URI uri) throws Exception {
             if (dontAddToStartup) {
                 getLog().info("Adding feature repository to system: " + uri);
                 if (featuresCfgFile.exists()) {
-                    Properties properties = new Properties();
-                    InputStream in = new FileInputStream(featuresCfgFile);
+                    final Properties properties = new Properties();
+                    final InputStream in = new FileInputStream(featuresCfgFile);
                     try {
                         properties.load(in);
                     } finally {
@@ -388,8 +388,8 @@ public class InstallKarsMojo extends MojoSupport {
                         existingFeatureRepos = existingFeatureRepos + uri.toString();
                         properties.put(FEATURES_REPOSITORIES, existingFeatureRepos);
                     }
-                    Features repo = readFeatures(uri);
-                    for (Feature feature : repo.getFeature()) {
+                    final Features repo = readFeatures(uri);
+                    for (final Feature feature : repo.getFeature()) {
                         featureSet.add(feature);
                         if (startupFeatures != null && startupFeatures.contains(feature.getName())) {
                             installFeature(feature, null);
@@ -409,7 +409,7 @@ public class InstallKarsMojo extends MojoSupport {
                     if (addTransitiveFeatures) {
                         addMissingDependenciesToRepo();
                     }
-                    FileOutputStream out = new FileOutputStream(featuresCfgFile);
+                    final FileOutputStream out = new FileOutputStream(featuresCfgFile);
                     try {
                         properties.save(out);
                     } finally {
@@ -418,17 +418,17 @@ public class InstallKarsMojo extends MojoSupport {
                 }
             } else {
                 getLog().info("Installing feature " + uri + " to system and startup.properties");
-                Features features = readFeatures(uri);
-                for (Feature feature : features.getFeature()) {
+                final Features features = readFeatures(uri);
+                for (final Feature feature : features.getFeature()) {
                     installFeature(feature, null);
                 }
             }
         }
 
         private void addMissingDependenciesToRepo() {
-            for (ListIterator<Dependency> iterator = missingDependencies.listIterator(); iterator.hasNext(); ) {
-                Dependency dependency = iterator.next();
-                Feature depFeature = lookupFeature(dependency);
+            for (final ListIterator<Dependency> iterator = missingDependencies.listIterator(); iterator.hasNext(); ) {
+                final Dependency dependency = iterator.next();
+                final Feature depFeature = lookupFeature(dependency);
                 if (depFeature == null) {
                     continue;
                 }
@@ -438,8 +438,8 @@ public class InstallKarsMojo extends MojoSupport {
             }
         }
 
-        private void addAllMissingDependencies(ListIterator<Dependency> iterator, Feature depFeature) {
-            for (Dependency dependency : depFeature.getDependencies()) {
+        private void addAllMissingDependencies(final ListIterator<Dependency> iterator, final Feature depFeature) {
+            for (final Dependency dependency : depFeature.getDependencies()) {
                 if (!missingDependencies.contains(dependency)) {
                     iterator.add(dependency);
                 }
@@ -447,22 +447,22 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         @Override
-        public void addRepository(URI uri, boolean install) throws Exception {
+        public void addRepository(final URI uri, final boolean install) throws Exception {
         }
 
-        private String retrieveProperty(Properties properties, String key) {
+        private String retrieveProperty(final Properties properties, final String key) {
             return properties.containsKey(key) && properties.get(key) != null ?  properties.get(key) + "," : "";
         }
 
-        private Features readFeatures(URI uri) throws XMLStreamException, JAXBException, IOException {
+        private Features readFeatures(final URI uri) throws XMLStreamException, JAXBException, IOException {
             File repoFile;
             if (uri.toString().startsWith("mvn:")) {
-                URI featuresPath = system.resolve(MavenUtil.pathFromMaven(uri.toString()));
+                final URI featuresPath = system.resolve(MavenUtil.pathFromMaven(uri.toString()));
                 repoFile = new File(featuresPath);
             } else {
                 repoFile = new File(uri);
             }
-            InputStream in = new FileInputStream(repoFile);
+            final InputStream in = new FileInputStream(repoFile);
             Features features;
             try {
                 features = JaxbUtil.unmarshal(in, false);
@@ -473,15 +473,15 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         @Override
-        public void removeRepository(URI uri) {
+        public void removeRepository(final URI uri) {
         }
 
         @Override
-        public void removeRepository(URI uri, boolean install) {
+        public void removeRepository(final URI uri, final boolean install) {
         }
 
         @Override
-        public void restoreRepository(URI uri) throws Exception {
+        public void restoreRepository(final URI uri) throws Exception {
         }
 
         @Override
@@ -490,29 +490,29 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         @Override
-        public void installFeature(String name) throws Exception {
+        public void installFeature(final String name) throws Exception {
         }
 
         @Override
-        public void installFeature(String name, EnumSet<Option> options) throws Exception {
+        public void installFeature(final String name, final EnumSet<Option> options) throws Exception {
         }
 
         @Override
-        public void installFeature(String name, String version) throws Exception {
+        public void installFeature(final String name, final String version) throws Exception {
         }
 
         @Override
-        public void installFeature(String name, String version, EnumSet<Option> options) throws Exception {
+        public void installFeature(final String name, final String version, final EnumSet<Option> options) throws Exception {
         }
 
         @Override
-        public void installFeature(org.apache.karaf.features.Feature feature, EnumSet<Option> options) throws Exception {
+        public void installFeature(final org.apache.karaf.features.Feature feature, final EnumSet<Option> options) throws Exception {
             List<String> comment = Arrays.asList(new String[]{"", "# feature: " + feature.getName() + " version: " + feature.getVersion()});
-            for (BundleInfo bundle : feature.getBundles()) {
-                String location = bundle.getLocation();
-                String startLevel = Integer.toString(bundle.getStartLevel() == 0 ? defaultStartLevel : bundle.getStartLevel());
+            for (final BundleInfo bundle : feature.getBundles()) {
+                final String location = bundle.getLocation();
+                final String startLevel = Integer.toString(bundle.getStartLevel() == 0 ? defaultStartLevel : bundle.getStartLevel());
                 if (startupProperties.containsKey(location)) {
-                    int oldStartLevel = Integer.decode((String)startupProperties.get(location));
+					final int oldStartLevel = Integer.decode(startupProperties.get(location).toString());
                     if (oldStartLevel > bundle.getStartLevel()) {
                         startupProperties.put(location, startLevel);
                     }
@@ -527,8 +527,8 @@ public class InstallKarsMojo extends MojoSupport {
             }
         }
 
-        private Feature lookupFeature(Dependency dependency) {
-            for (Feature feature : featureSet) {
+        private Feature lookupFeature(final Dependency dependency) {
+            for (final Feature feature : featureSet) {
                 if (featureSatisfiesDependency(feature, dependency)) {
                     return feature;
                 }
@@ -536,7 +536,7 @@ public class InstallKarsMojo extends MojoSupport {
             return null;
         }
 
-        private boolean featureSatisfiesDependency(Feature feature, Dependency dependency) {
+        private boolean featureSatisfiesDependency(final Feature feature, final Dependency dependency) {
             if (!feature.getName().equals(dependency.getName())) {
                 return false;
             }
@@ -544,16 +544,16 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         @Override
-        public void installFeatures(Set<org.apache.karaf.features.Feature> features, EnumSet<Option> options)
+        public void installFeatures(final Set<org.apache.karaf.features.Feature> features, final EnumSet<Option> options)
             throws Exception {
         }
 
         @Override
-        public void uninstallFeature(String name) throws Exception {
+        public void uninstallFeature(final String name) throws Exception {
         }
 
         @Override
-        public void uninstallFeature(String name, String version) throws Exception {
+        public void uninstallFeature(final String name, final String version) throws Exception {
         }
 
         @Override
@@ -567,30 +567,30 @@ public class InstallKarsMojo extends MojoSupport {
         }
 
         @Override
-        public boolean isInstalled(org.apache.karaf.features.Feature f) {
+        public boolean isInstalled(final org.apache.karaf.features.Feature f) {
             return false;
         }
 
         @Override
-        public org.apache.karaf.features.Feature getFeature(String name, String version) throws Exception {
+        public org.apache.karaf.features.Feature getFeature(final String name, final String version) throws Exception {
             return null;
         }
 
         @Override
-        public org.apache.karaf.features.Feature getFeature(String name) throws Exception {
+        public org.apache.karaf.features.Feature getFeature(final String name) throws Exception {
             return null;
         }
 
         @Override
-        public Repository getRepository(String repoName) {
+        public Repository getRepository(final String repoName) {
             // TODO Auto-generated method stub
             return null;
         }
 
 		@Override
-		public void refreshRepository(URI uri) throws Exception {
+		public void refreshRepository(final URI uri) throws Exception {
 			// TODO Auto-generated method stub
-			
+
 		}
     }
 
@@ -606,30 +606,32 @@ public class InstallKarsMojo extends MojoSupport {
             storage = (Map<String, String>) getField("storage");
         }
 
-        private Object getField(String fieldName) {
+        private Object getField(final String fieldName) {
             try {
-                Field l = Properties.class.getDeclaredField(fieldName);
-                boolean old = l.isAccessible();
+                final Field l = Properties.class.getDeclaredField(fieldName);
+                final boolean old = l.isAccessible();
                 l.setAccessible(true);
-                Object layout = l.get(this);
+                final Object layout = l.get(this);
                 l.setAccessible(old);
                 return layout;
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 throw new RuntimeException("Could not access field " + fieldName, e);
             }
         }
 
-        public String put(String key, String comment, String value) {
+        @Override
+		public String put(final String key, final String comment, final String value) {
             return put(key, Collections.singletonList(comment), value);
         }
 
-        public List<String> getRaw(String key) {
+        @Override
+		public List<String> getRaw(final String key) {
             if (layout.containsKey(key)) {
                 if (layout.get(key).getValueLines() != null) {
                     return new ArrayList<String>(layout.get(key).getValueLines());
                 }
             }
-            List<String> result = new ArrayList<String>();
+            final List<String> result = new ArrayList<String>();
             if (storage.containsKey(key)) {
                 result.add(storage.get(key));
             }

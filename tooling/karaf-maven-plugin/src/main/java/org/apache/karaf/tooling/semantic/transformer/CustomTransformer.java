@@ -2,7 +2,6 @@ package org.apache.karaf.tooling.semantic.transformer;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -13,14 +12,12 @@ import java.util.regex.Pattern;
 
 import org.apache.karaf.tooling.semantic.range.VersionType;
 import org.apache.mina.util.IdentityHashSet;
-import org.sonatype.aether.RepositoryException;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.collection.DependencyGraphTransformationContext;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.graph.DependencyVisitor;
-import org.sonatype.aether.util.artifact.ArtifacIdUtils;
-
-import org.apache.karaf.tooling.semantic.eclipse.ConflictResolver;
+import org.eclipse.aether.RepositoryException;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.DependencyGraphTransformationContext;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.util.artifact.ArtifactIdUtils;
+import org.eclipse.aether.util.graph.transformer.ConflictResolver;
 
 /**
  * Customer transform.
@@ -43,7 +40,7 @@ public class CustomTransformer extends BaseTransformer {
 		 * {@link ConflictResolver.ConflictItem}
 		 * "unique owner of a child node which is the child list"
 		 */
-		static Object key(DependencyNode node) {
+		static Object key(final DependencyNode node) {
 			return node.getChildren();
 		}
 
@@ -55,7 +52,7 @@ public class CustomTransformer extends BaseTransformer {
 		/** Nodes which represent the same pom.xml */
 		final Set<DependencyNode> pomSet = new IdentityHashSet<DependencyNode>();
 
-		Project(List<DependencyNode> nodeList) {
+		Project(final List<DependencyNode> nodeList) {
 			this.key = nodeList;
 			this.nodeList = nodeList;
 		}
@@ -154,7 +151,7 @@ public class CustomTransformer extends BaseTransformer {
 				removalMap.put(node, key);
 			} else {
 				/** Remove non-matching snapshots. */
-				final String artifactGUID = ArtifacIdUtils.toId(artifact);
+				final String artifactGUID = ArtifactIdUtils.toId(artifact);
 				if (enableRangeSnapshotRegex.matcher(artifactGUID).matches()) {
 					/** Keep. */
 				} else {
@@ -170,7 +167,7 @@ public class CustomTransformer extends BaseTransformer {
 	 * Remove nodes from dependency list.
 	 */
 	protected void remove(final Map<Object, List<DependencyNode>> pomMap,
-			Map<DependencyNode, Object> removalMap) {
+			final Map<DependencyNode, Object> removalMap) {
 
 		final Collection<List<DependencyNode>> dependencyList = pomMap.values();
 
@@ -273,7 +270,7 @@ public class CustomTransformer extends BaseTransformer {
 				} else {
 					/** Remove non-matching snapshots. */
 					if (isSnapshot) {
-						final String artifactGUID = ArtifacIdUtils
+							final String artifactGUID = ArtifactIdUtils
 								.toId(artifact);
 						if (enableRangeSnapshotRegex.matcher(artifactGUID)
 								.matches()) {

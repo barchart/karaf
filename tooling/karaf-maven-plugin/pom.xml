@@ -62,34 +62,56 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.0.3</version>
+            <version>3.2.5</version>
         </dependency>
         <dependency>
-           <groupId>org.sonatype.aether</groupId>
+           <groupId>org.eclipse.aether</groupId>
            <artifactId>aether-api</artifactId>
-           <version>1.13</version>
+           <version>1.0.0.v20140518</version>
          </dependency>
          <dependency>
-           <groupId>org.sonatype.aether</groupId>
+           <groupId>org.eclipse.aether</groupId>
            <artifactId>aether-util</artifactId>
-           <version>1.13</version>
+           <version>1.0.0.v20140518</version>
+         </dependency>
+         <dependency>
+           <groupId>org.eclipse.aether</groupId>
+           <artifactId>aether-transport-wagon</artifactId>
+           <version>1.0.0.v20140518</version>
+           <scope>test</scope>
+         </dependency>
+         <dependency>
+           <groupId>org.eclipse.aether</groupId>
+           <artifactId>aether-connector-basic</artifactId>
+           <version>1.0.0.v20140518</version>
+           <scope>test</scope>
+         </dependency>
+         <dependency>
+           <groupId>org.eclipse.aether</groupId>
+           <artifactId>aether-transport-wagon</artifactId>
+           <version>1.0.0.v20140518</version>
+           <scope>test</scope>
          </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>3.0.3</version>
+            <version>3.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.0.3</version>
+            <version>3.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-compat</artifactId>
-            <version>3.0.3</version>
+            <version>3.2.5</version>
         </dependency>
-
+        <dependency>
+			<groupId>org.apache.maven.wagon</groupId>
+			<artifactId>wagon-http-lightweight</artifactId>
+			<version>2.8</version>
+		</dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -104,7 +126,7 @@
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
-            <version>3.0</version>
+            <version>3.0.20</version>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
@@ -134,10 +156,12 @@
         <dependency>
             <groupId>org.ops4j.pax.url</groupId>
             <artifactId>pax-url-wrap</artifactId>
+            <version>2.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.ops4j.pax.url</groupId>
             <artifactId>pax-url-aether</artifactId>
+            <version>2.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.karaf.deployer</groupId>
@@ -287,4 +311,41 @@
         </plugins>
     </reporting>
 
+    <build>
+    	<pluginManagement>
+    		<plugins>
+    			<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    			<plugin>
+    				<groupId>org.eclipse.m2e</groupId>
+    				<artifactId>lifecycle-mapping</artifactId>
+    				<version>1.0.0</version>
+    				<configuration>
+    					<lifecycleMappingMetadata>
+    						<pluginExecutions>
+    							<pluginExecution>
+    								<pluginExecutionFilter>
+    									<groupId>
+    										org.apache.maven.plugins
+    									</groupId>
+    									<artifactId>
+    										maven-plugin-plugin
+    									</artifactId>
+    									<versionRange>
+    										[3.2,)
+    									</versionRange>
+    									<goals>
+    										<goal>descriptor</goal>
+    									</goals>
+    								</pluginExecutionFilter>
+    								<action>
+    									<ignore></ignore>
+    								</action>
+    							</pluginExecution>
+    						</pluginExecutions>
+    					</lifecycleMappingMetadata>
+    				</configuration>
+    			</plugin>
+    		</plugins>
+    	</pluginManagement>
+    </build>
 </project>

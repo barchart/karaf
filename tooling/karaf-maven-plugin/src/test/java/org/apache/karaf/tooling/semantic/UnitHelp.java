@@ -20,38 +20,10 @@
 package org.apache.karaf.tooling.semantic;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.ops4j.pax.url.mvn.internal.ManualWagonProvider;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.collection.CollectRequest;
-import org.sonatype.aether.connector.wagon.WagonProvider;
-import org.sonatype.aether.connector.wagon.WagonRepositoryConnectorFactory;
-import org.sonatype.aether.graph.Dependency;
-import org.sonatype.aether.graph.DependencyFilter;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.impl.ArtifactDescriptorReader;
-import org.sonatype.aether.impl.VersionRangeResolver;
-import org.sonatype.aether.impl.VersionResolver;
-import org.sonatype.aether.impl.internal.DefaultRepositorySystem;
-import org.sonatype.aether.impl.internal.DefaultServiceLocator;
-import org.sonatype.aether.repository.LocalRepository;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactRequest;
-import org.sonatype.aether.resolution.ArtifactResolutionException;
-import org.sonatype.aether.resolution.ArtifactResult;
-import org.sonatype.aether.resolution.DependencyRequest;
-import org.sonatype.aether.resolution.DependencyResult;
-import org.sonatype.aether.spi.connector.RepositoryConnectorFactory;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
-import org.sonatype.aether.util.filter.ScopeDependencyFilter;
-import org.sonatype.aether.util.graph.PreorderNodeListGenerator;
 import org.apache.maven.RepositoryUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
@@ -60,11 +32,38 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader;
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver;
 import org.apache.maven.repository.internal.DefaultVersionResolver;
-import org.apache.maven.repository.internal.MavenRepositorySystemSession;
-import org.apache.maven.wagon.Wagon;
-import org.apache.maven.wagon.providers.http.LightweightHttpWagon;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.impl.ArtifactDescriptorReader;
+import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.impl.VersionRangeResolver;
+import org.eclipse.aether.impl.VersionResolver;
+import org.eclipse.aether.internal.impl.DefaultTransporterProvider;
+import org.eclipse.aether.internal.transport.wagon.PlexusWagonConfigurator;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
+import org.eclipse.aether.spi.connector.transport.TransporterFactory;
+import org.eclipse.aether.spi.connector.transport.TransporterProvider;
+import org.eclipse.aether.transport.wagon.WagonConfigurator;
+import org.eclipse.aether.transport.wagon.WagonProvider;
+import org.eclipse.aether.transport.wagon.WagonTransporterFactory;
+import org.eclipse.aether.util.filter.ScopeDependencyFilter;
+import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
 
 public class UnitHelp {
 
@@ -84,7 +83,7 @@ public class UnitHelp {
 	/**
 	 * Verify operation manually.
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(final String[] args) throws Exception {
 
 		final Logger log = logger();
 
@@ -93,7 +92,7 @@ public class UnitHelp {
 		final RepositorySystemSession session = newSession(system);
 
 		// String uri = "jmock:jmock:pom:1.1.0";
-		String uri = "org.apache.maven:maven-profile:2.2.1";
+		final String uri = "org.apache.maven:maven-profile:2.2.1";
 
 		final Artifact artifact = new DefaultArtifact(uri);
 
@@ -129,7 +128,7 @@ public class UnitHelp {
 		final String[] pathArray = generator.getClassPath().split(
 				File.pathSeparator);
 
-		for (String path : pathArray) {
+		for (final String path : pathArray) {
 			log.info("path = " + path);
 		}
 
@@ -144,7 +143,7 @@ public class UnitHelp {
 	/**
 	 * Resolve maven URI into maven artifact.
 	 */
-	public static Artifact newArtifact(String mavenURI) throws Exception {
+	public static Artifact newArtifact(final String mavenURI) throws Exception {
 
 		final RepositorySystem system = newSystem();
 		final RepositorySystemSession session = newSession(system);
@@ -167,7 +166,7 @@ public class UnitHelp {
 	 * <p>
 	 * Provides only model and artifact.
 	 */
-	public static MavenProject newProject(String mavenURI) throws Exception {
+	public static MavenProject newProject(final String mavenURI) throws Exception {
 
 		final Artifact artifact = newArtifact(mavenURI);
 
@@ -205,8 +204,8 @@ public class UnitHelp {
 	 * Remote central repository.
 	 */
 	public static RemoteRepository newRepoRemote() throws Exception {
-		final RemoteRepository central = new RemoteRepository("central",
-				"default", URL_CENTRAL);
+		final RemoteRepository central = new RemoteRepository.Builder("central",
+				"default", URL_CENTRAL).build();
 		return central;
 	}
 
@@ -227,15 +226,15 @@ public class UnitHelp {
 	/**
 	 * Default repository session.
 	 */
-	public static MavenRepositorySystemSession newSession(
-			RepositorySystem system) throws Exception {
+	public static DefaultRepositorySystemSession newSession(
+			final RepositorySystem system) throws Exception {
 
 		final LocalRepository localRepo = newRepoLocal();
 
-		final MavenRepositorySystemSession session = new MavenRepositorySystemSession();
+		final DefaultRepositorySystemSession session = new DefaultRepositorySystemSession();
 
 		session.setLocalRepositoryManager(system
-				.newLocalRepositoryManager(localRepo));
+				.newLocalRepositoryManager(session, localRepo));
 
 		return session;
 
@@ -246,20 +245,16 @@ public class UnitHelp {
 	 */
 	public static RepositorySystem newSystem() throws Exception {
 
-		DefaultServiceLocator locator = new DefaultServiceLocator();
+		final DefaultServiceLocator locator = new DefaultServiceLocator();
 
 		locator.addService(VersionResolver.class, DefaultVersionResolver.class);
-
-		locator.addService(VersionRangeResolver.class,
-				DefaultVersionRangeResolver.class);
-
-		locator.addService(ArtifactDescriptorReader.class,
-				DefaultArtifactDescriptorReader.class);
-
+		locator.addService(VersionRangeResolver.class, DefaultVersionRangeResolver.class);
+		locator.addService(ArtifactDescriptorReader.class, DefaultArtifactDescriptorReader.class);
 		locator.addService(WagonProvider.class, SimpleWagonProvider.class);
-
-		locator.addService(RepositoryConnectorFactory.class,
-				WagonRepositoryConnectorFactory.class);
+		locator.addService(WagonConfigurator.class, PlexusWagonConfigurator.class);
+		locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
+		locator.addService(TransporterProvider.class, DefaultTransporterProvider.class);
+		locator.addService(TransporterFactory.class, WagonTransporterFactory.class);
 
 		return locator.getService(RepositorySystem.class);
 

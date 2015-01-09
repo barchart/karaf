@@ -10,10 +10,10 @@ package org.apache.karaf.tooling.semantic.selector;
 
 import java.util.Set;
 
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.collection.DependencyCollectionContext;
-import org.sonatype.aether.collection.DependencySelector;
-import org.sonatype.aether.graph.Dependency;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.DependencyCollectionContext;
+import org.eclipse.aether.collection.DependencySelector;
+import org.eclipse.aether.graph.Dependency;
 
 /**
  */
@@ -23,30 +23,32 @@ public class ExtensionDependencySelector implements DependencySelector {
 
 	/**
      */
-	public ExtensionDependencySelector(Set<String> typeIncluded) {
+	public ExtensionDependencySelector(final Set<String> typeIncluded) {
 		this.typeIncluded = typeIncluded;
 	}
 
-	public boolean selectDependency(Dependency dependency) {
+	@Override
+	public boolean selectDependency(final Dependency dependency) {
 		final Artifact artifact = dependency.getArtifact();
 		final String extension = artifact.getExtension();
 		return typeIncluded.contains(extension);
 	}
 
+	@Override
 	public DependencySelector deriveChildSelector(
-			DependencyCollectionContext context) {
+			final DependencyCollectionContext context) {
 		return this;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		} else if (null == obj || !getClass().equals(obj.getClass())) {
 			return false;
 		}
 
-		ExtensionDependencySelector that = (ExtensionDependencySelector) obj;
+		final ExtensionDependencySelector that = (ExtensionDependencySelector) obj;
 		return this.typeIncluded.equals(that.typeIncluded);
 	}
 

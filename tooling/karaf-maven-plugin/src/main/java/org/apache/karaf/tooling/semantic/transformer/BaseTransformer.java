@@ -4,10 +4,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.sonatype.aether.collection.DependencyGraphTransformationContext;
-import org.sonatype.aether.collection.DependencyGraphTransformer;
-import org.sonatype.aether.graph.DependencyNode;
-import org.sonatype.aether.util.graph.transformer.TransformationContextKeys;
+import org.eclipse.aether.collection.DependencyGraphTransformationContext;
+import org.eclipse.aether.collection.DependencyGraphTransformer;
+import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.util.graph.transformer.TransformationContextKeys;
 
 /**
  * "Object" of "Conflict ID" is an integer key.
@@ -17,7 +17,7 @@ import org.sonatype.aether.util.graph.transformer.TransformationContextKeys;
  * identity == unique instance
  * <p>
  * Conflict list and map must be produced by previous transformers.
- * 
+ *
  * @author Andrei Pozolotin
  */
 public abstract class BaseTransformer implements DependencyGraphTransformer {
@@ -39,7 +39,7 @@ public abstract class BaseTransformer implements DependencyGraphTransformer {
 	@SuppressWarnings("unchecked")
 	public Collection<Collection<Object>> cycles(
 			final DependencyGraphTransformationContext context) {
-		Collection<Collection<Object>> cycles = (Collection<Collection<Object>>) context
+		final Collection<Collection<Object>> cycles = (Collection<Collection<Object>>) context
 				.get(TransformationContextKeys.CYCLIC_CONFLICT_IDS);
 		return cycles;
 	}

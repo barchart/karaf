@@ -17,8 +17,25 @@
  */
 package org.apache.karaf.tooling.features;
 
-import java.io.*;
-import java.util.*;
+import static org.apache.karaf.deployer.kar.KarArtifactInstaller.FEATURE_CLASSIFIER;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 
@@ -48,15 +65,13 @@ import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.codehaus.plexus.util.ReaderFactory;
 import org.codehaus.plexus.util.StringUtils;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactRequest;
-import org.sonatype.aether.resolution.ArtifactResult;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResult;
 import org.xml.sax.SAXException;
-
-import static org.apache.karaf.deployer.kar.KarArtifactInstaller.FEATURE_CLASSIFIER;
 
 /**
  * Generates the features XML file
@@ -259,18 +274,19 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
     private Log log;
 
     protected void prepare() throws Exception {
-		DependencyHelper dependencyHelper = new DependencyHelper(projectRepos, repoSession, repoSystem);
+		final DependencyHelper dependencyHelper = new DependencyHelper(projectRepos, repoSession, repoSystem);
 		dependencyHelper.getDependencies(project, includeTransitiveDependency);
 		this.localDependencies = dependencyHelper.getLocalDependencies();
 		this.treeListing = dependencyHelper.getTreeListing();
     }
-    
-    public void execute() throws MojoExecutionException, MojoFailureException {
+
+    @Override
+	public void execute() throws MojoExecutionException, MojoFailureException {
         try {
         	prepare();
-            File dir = outputFile.getParentFile();
+            final File dir = outputFile.getParentFile();
             if (dir.isDirectory() || dir.mkdirs()) {
-                PrintStream out = new PrintStream(new FileOutputStream(outputFile));
+                final PrintStream out = new PrintStream(new FileOutputStream(outputFile));
                 try {
                     writeFeatures(out);
                 } finally {
@@ -282,7 +298,7 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
             } else {
                 throw new MojoExecutionException("Could not create directory for features file: " + dir);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             getLogger().error(e.getMessage());
             throw new MojoExecutionException("Unable to create features.xml file: " + e, e);
         }
@@ -291,11 +307,11 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
     /*
      * Write all project dependencies as feature
      */
-    protected void writeFeatures(PrintStream out) throws ArtifactResolutionException, ArtifactNotFoundException,
+    protected void writeFeatures(final PrintStream out) throws ArtifactResolutionException, ArtifactNotFoundException,
             IOException, JAXBException, SAXException, ParserConfigurationException, XMLStreamException, MojoExecutionException {
         getLogger().info("Generating feature descriptor file " + outputFile.getAbsolutePath());
         //read in an existing feature.xml
-        ObjectFactory objectFactory = new ObjectFactory();
+        final ObjectFactory objectFactory = new ObjectFactory();
         Features features;
         if (inputFile.exists()) {
             filter(inputFile, filteredInputFile);
@@ -308,7 +324,7 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         }
 
         Feature feature = null;
-        for (Feature test : features.getFeature()) {
+        for (final Feature test : features.getFeature()) {
             if (test.getName().equals(project.getArtifactId())) {
                 feature = test;
             }
@@ -332,8 +348,8 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         if (project.getDescription() != null && feature.getDetails() == null) {
             feature.setDetails(project.getDescription());
         }
-        for (Map.Entry<Artifact, String> entry : localDependencies.entrySet()) {
-            Artifact artifact = entry.getKey();
+        for (final Map.Entry<Artifact, String> entry : localDependencies.entrySet()) {
+            final Artifact artifact = entry.getKey();
 
             if (excludedArtifactIds.contains(artifact.getArtifactId())) {
                 continue;
@@ -341,25 +357,25 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
 
             if (DependencyHelper.isFeature(artifact)) {
                 if (aggregateFeatures && FEATURE_CLASSIFIER.equals(artifact.getClassifier())) {
-                    File featuresFile = resolve(artifact);
+                    final File featuresFile = resolve(artifact);
                     if (featuresFile == null || !featuresFile.exists()) {
                         throw new MojoExecutionException("Cannot locate file for feature: " + artifact + " at " + featuresFile);
                     }
-                    Features includedFeatures = readFeaturesFile(featuresFile);
+                    final Features includedFeatures = readFeaturesFile(featuresFile);
                     //TODO check for duplicates?
                     features.getFeature().addAll(includedFeatures.getFeature());
                 }
             } else if (addBundlesToPrimaryFeature) {
                 String bundleName = MavenUtil.artifactToMvn(artifact);
-                File bundleFile = resolve(artifact);
-                Manifest manifest = getManifest(bundleFile);
+                final File bundleFile = resolve(artifact);
+                final Manifest manifest = getManifest(bundleFile);
 
                 if (manifest == null || !ManifestUtils.isBundle(getManifest(bundleFile))) {
                     bundleName = "wrap:" + bundleName;
                 }
 
                 Bundle bundle = null;
-                for (Bundle b : feature.getBundle()) {
+                for (final Bundle b : feature.getBundle()) {
                     if (bundleName.equals(b.getLocation())) {
                         bundle = b;
                         break;
@@ -386,7 +402,7 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         JaxbUtil.marshal(features, out);
         try {
             checkChanges(features, objectFactory);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new MojoExecutionException("Features contents have changed", e);
         }
         getLogger().info("...done!");
@@ -396,19 +412,19 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
      * Extract the MANIFEST from the give file.
      */
 
-    private Manifest getManifest(File file) throws IOException {
+    private Manifest getManifest(final File file) throws IOException {
         InputStream is = null;
         try {
             is = new BufferedInputStream(new FileInputStream(file));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             getLogger().warn("Error while opening artifact", e);
             return null;
         }
 
         try {
             is.mark(256 * 1024);
-            JarInputStream jar = new JarInputStream(is);
-            Manifest m = jar.getManifest();
+            final JarInputStream jar = new JarInputStream(is);
+            final Manifest m = jar.getManifest();
             if (m == null) {
                 getLogger().warn("Manifest not present in the first entry of the zip - " + file.getName());
             }
@@ -421,8 +437,8 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         }
     }
 
-    private File resolve(Artifact artifact) {
-        ArtifactRequest request = new ArtifactRequest();
+    private File resolve(final Artifact artifact) {
+        final ArtifactRequest request = new ArtifactRequest();
         request.setArtifact(artifact);
         request.setRepositories(projectRepos);
 
@@ -432,7 +448,7 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         ArtifactResult result;
         try {
             result = repoSystem.resolveArtifact(repoSession, request);
-        } catch (org.sonatype.aether.resolution.ArtifactResolutionException e) {
+		} catch (final org.eclipse.aether.resolution.ArtifactResolutionException e) {
             getLog().warn("could not resolve " + artifact, e);
             return null;
         }
@@ -444,9 +460,9 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
     }
 
 
-    private Features readFeaturesFile(File featuresFile) throws XMLStreamException, JAXBException, IOException {
+    private Features readFeaturesFile(final File featuresFile) throws XMLStreamException, JAXBException, IOException {
         Features features;
-        InputStream in = new FileInputStream(featuresFile);
+        final InputStream in = new FileInputStream(featuresFile);
         try {
             features = JaxbUtil.unmarshal(in, false);
         } finally {
@@ -455,11 +471,13 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         return features;
     }
 
-    public void setLog(Log log) {
+    @Override
+	public void setLog(final Log log) {
         this.log = log;
     }
 
-    public Log getLog() {
+    @Override
+	public Log getLog() {
         if (log == null) {
             setLog(new SystemStreamLog());
         }
@@ -546,21 +564,21 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
      */
     protected Map<String, String> systemProperties;
 
-    private void checkChanges(Features newFeatures, ObjectFactory objectFactory) throws Exception, IOException, JAXBException, XMLStreamException {
+    private void checkChanges(final Features newFeatures, final ObjectFactory objectFactory) throws Exception, IOException, JAXBException, XMLStreamException {
         if (checkDependencyChange) {
             //combine all the dependencies to one feature and strip out versions
-            Features features = objectFactory.createFeaturesRoot();
+            final Features features = objectFactory.createFeaturesRoot();
             features.setName(newFeatures.getName());
-            Feature feature = objectFactory.createFeature();
+            final Feature feature = objectFactory.createFeature();
             features.getFeature().add(feature);
-            for (Feature f : newFeatures.getFeature()) {
-                for (Bundle b : f.getBundle()) {
-                    Bundle bundle = objectFactory.createBundle();
+            for (final Feature f : newFeatures.getFeature()) {
+                for (final Bundle b : f.getBundle()) {
+                    final Bundle bundle = objectFactory.createBundle();
                     bundle.setLocation(b.getLocation());
                     feature.getBundle().add(bundle);
                 }
-                for (Dependency d : f.getFeature()) {
-                    Dependency dependency = objectFactory.createDependency();
+                for (final Dependency d : f.getFeature()) {
+                    final Dependency dependency = objectFactory.createDependency();
                     dependency.setName(d.getName());
                     feature.getFeature().add(dependency);
                 }
@@ -568,12 +586,14 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
 
             Collections.sort(feature.getBundle(), new Comparator<Bundle>() {
 
-                public int compare(Bundle bundle, Bundle bundle1) {
+                @Override
+				public int compare(final Bundle bundle, final Bundle bundle1) {
                     return bundle.getLocation().compareTo(bundle1.getLocation());
                 }
             });
             Collections.sort(feature.getFeature(), new Comparator<Dependency>() {
-                public int compare(Dependency dependency, Dependency dependency1) {
+                @Override
+				public int compare(final Dependency dependency, final Dependency dependency1) {
                     return dependency.getName().compareTo(dependency1.getName());
                 }
             });
@@ -582,16 +602,16 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
                 //filter dependencies file
                 filter(dependencyCache, filteredDependencyCache);
                 //read dependency types, convert to dependencies, compare.
-                Features oldfeatures = readFeaturesFile(filteredDependencyCache);
-                Feature oldFeature = oldfeatures.getFeature().get(0);
+                final Features oldfeatures = readFeaturesFile(filteredDependencyCache);
+                final Feature oldFeature = oldfeatures.getFeature().get(0);
 
-                List<Bundle> addedBundles = new ArrayList<Bundle>(feature.getBundle());
-                List<Bundle> removedBundles = new ArrayList<Bundle>();
-                for (Bundle test : oldFeature.getBundle()) {
-                    boolean t1 = addedBundles.contains(test);
-                    int s1 = addedBundles.size();
-                    boolean t2 = addedBundles.remove(test);
-                    int s2 = addedBundles.size();
+                final List<Bundle> addedBundles = new ArrayList<Bundle>(feature.getBundle());
+                final List<Bundle> removedBundles = new ArrayList<Bundle>();
+                for (final Bundle test : oldFeature.getBundle()) {
+                    final boolean t1 = addedBundles.contains(test);
+                    final int s1 = addedBundles.size();
+                    final boolean t2 = addedBundles.remove(test);
+                    final int s2 = addedBundles.size();
                     if (t1 != t2) {
                         getLogger().warn("dependencies.contains: " + t1 + ", dependencies.remove(test): " + t2);
                     }
@@ -603,13 +623,13 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
                     }
                 }
 
-                List<Dependency> addedDependencys = new ArrayList<Dependency>(feature.getFeature());
-                List<Dependency> removedDependencys = new ArrayList<Dependency>();
-                for (Dependency test : oldFeature.getFeature()) {
-                    boolean t1 = addedDependencys.contains(test);
-                    int s1 = addedDependencys.size();
-                    boolean t2 = addedDependencys.remove(test);
-                    int s2 = addedDependencys.size();
+                final List<Dependency> addedDependencys = new ArrayList<Dependency>(feature.getFeature());
+                final List<Dependency> removedDependencys = new ArrayList<Dependency>();
+                for (final Dependency test : oldFeature.getFeature()) {
+                    final boolean t1 = addedDependencys.contains(test);
+                    final int s1 = addedDependencys.size();
+                    final boolean t2 = addedDependencys.remove(test);
+                    final int s2 = addedDependencys.size();
                     if (t1 != t2) {
                         getLogger().warn("dependencies.contains: " + t1 + ", dependencies.remove(test): " + t2);
                     }
@@ -635,17 +655,17 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         }
     }
 
-    protected void saveDependencyChanges(Collection<Bundle> addedBundles, Collection<Bundle> removedBundles, Collection<Dependency> addedDependencys, Collection<Dependency> removedDependencys, ObjectFactory objectFactory)
+    protected void saveDependencyChanges(final Collection<Bundle> addedBundles, final Collection<Bundle> removedBundles, final Collection<Dependency> addedDependencys, final Collection<Dependency> removedDependencys, final ObjectFactory objectFactory)
             throws Exception {
-        File addedFile = new File(filteredDependencyCache.getParentFile(), "dependencies.added.xml");
-        Features added = toFeatures(addedBundles, addedDependencys, objectFactory);
+        final File addedFile = new File(filteredDependencyCache.getParentFile(), "dependencies.added.xml");
+        final Features added = toFeatures(addedBundles, addedDependencys, objectFactory);
         writeDependencies(added, addedFile);
 
-        File removedFile = new File(filteredDependencyCache.getParentFile(), "dependencies.removed.xml");
-        Features removed = toFeatures(removedBundles, removedDependencys, objectFactory);
+        final File removedFile = new File(filteredDependencyCache.getParentFile(), "dependencies.removed.xml");
+        final Features removed = toFeatures(removedBundles, removedDependencys, objectFactory);
         writeDependencies(removed, removedFile);
 
-        StringWriter out = new StringWriter();
+        final StringWriter out = new StringWriter();
         out.write(saveTreeListing());
 
         out.write("Dependencies have changed:\n");
@@ -671,9 +691,9 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         }
     }
 
-    private Features toFeatures(Collection<Bundle> addedBundles, Collection<Dependency> addedDependencys, ObjectFactory objectFactory) {
-        Features features = objectFactory.createFeaturesRoot();
-        Feature feature = objectFactory.createFeature();
+    private Features toFeatures(final Collection<Bundle> addedBundles, final Collection<Dependency> addedDependencys, final ObjectFactory objectFactory) {
+        final Features features = objectFactory.createFeaturesRoot();
+        final Feature feature = objectFactory.createFeature();
         feature.getBundle().addAll(addedBundles);
         feature.getFeature().addAll(addedDependencys);
         features.getFeature().add(feature);
@@ -681,12 +701,12 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
     }
 
 
-    private void writeDependencies(Features features, File file) throws JAXBException, IOException {
+    private void writeDependencies(final Features features, final File file) throws JAXBException, IOException {
         file.getParentFile().mkdirs();
         if (!file.getParentFile().exists() || !file.getParentFile().isDirectory()) {
             throw new IOException("Cannot create directory at " + file.getParent());
         }
-        FileOutputStream out = new FileOutputStream(file);
+        final FileOutputStream out = new FileOutputStream(file);
         try {
             JaxbUtil.marshal(features, out);
         } finally {
@@ -694,7 +714,7 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
         }
     }
 
-    protected void filter(File sourceFile, File targetFile)
+    protected void filter(final File sourceFile, final File targetFile)
             throws MojoExecutionException {
         try {
 
@@ -705,17 +725,18 @@ public class GenerateDescriptorMojo extends AbstractLogEnabled implements Mojo {
             }
             targetFile.getParentFile().mkdirs();
             @SuppressWarnings("rawtypes")
+			final
 			List filters = mavenFileFilter.getDefaultFilterWrappers(project, null, true, session, null);
             mavenFileFilter.copyFile(sourceFile, targetFile, true, filters, encoding, true);
-        } catch (MavenFilteringException e) {
+        } catch (final MavenFilteringException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
 
     protected String saveTreeListing() throws IOException {
-        File treeListFile = new File(filteredDependencyCache.getParentFile(), "treeListing.txt");
-        OutputStream os = new FileOutputStream(treeListFile);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
+        final File treeListFile = new File(filteredDependencyCache.getParentFile(), "treeListing.txt");
+        final OutputStream os = new FileOutputStream(treeListFile);
+        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
         try {
             writer.write(treeListing);
         } finally {

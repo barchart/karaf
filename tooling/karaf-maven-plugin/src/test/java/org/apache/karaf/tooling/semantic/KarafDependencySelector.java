@@ -19,24 +19,25 @@ package org.apache.karaf.tooling.semantic;
 
 import java.util.Collection;
 
-import org.sonatype.aether.collection.DependencyCollectionContext;
-import org.sonatype.aether.collection.DependencySelector;
-import org.sonatype.aether.graph.Dependency;
+import org.eclipse.aether.collection.DependencyCollectionContext;
+import org.eclipse.aether.collection.DependencySelector;
+import org.eclipse.aether.graph.Dependency;
 
 public class KarafDependencySelector implements DependencySelector {
 
-	public KarafDependencySelector(Collection<String> included,
-			Collection<String> excluded) {
+	public KarafDependencySelector(final Collection<String> included,
+			final Collection<String> excluded) {
 	}
 
-	public boolean selectDependency(Dependency dependency) {
+	@Override
+	public boolean selectDependency(final Dependency dependency) {
 		System.out.println("dependency : "+ dependency);
 		return true;
 	}
 
 	@Override
 	public DependencySelector deriveChildSelector(
-			DependencyCollectionContext context) {
+			final DependencyCollectionContext context) {
 		System.out.println("context    : "+ context);
 		return this;
 	}

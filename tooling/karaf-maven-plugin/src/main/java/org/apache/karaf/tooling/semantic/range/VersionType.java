@@ -1,6 +1,7 @@
 package org.apache.karaf.tooling.semantic.range;
 
-import org.sonatype.aether.version.VersionConstraint;
+import org.eclipse.aether.version.VersionConstraint;
+
 
 /**
  * Version type resolver
@@ -28,7 +29,7 @@ public enum VersionType {
 		if (constraint == null) {
 			return WRONG;
 		}
-		final boolean hasRange = !constraint.getRanges().isEmpty();
+		final boolean hasRange = constraint.getRange() != null;
 		final boolean hasValue = constraint.getVersion() != null;
 		if (hasRange && !hasValue) {
 			return RANGE;

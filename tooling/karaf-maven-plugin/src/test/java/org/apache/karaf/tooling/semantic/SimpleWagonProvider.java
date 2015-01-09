@@ -21,30 +21,38 @@ package org.apache.karaf.tooling.semantic;
 
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.providers.http.LightweightHttpWagon;
+import org.apache.maven.wagon.providers.http.LightweightHttpWagonAuthenticator;
 import org.apache.maven.wagon.providers.http.LightweightHttpsWagon;
-import org.sonatype.aether.connector.wagon.WagonProvider;
+import org.eclipse.aether.transport.wagon.WagonProvider;
 
 public class SimpleWagonProvider implements WagonProvider {
 
-	public Wagon lookup(String roleHint) throws Exception {
+	@Override
+	public Wagon lookup(final String roleHint) throws Exception {
+
+		final LightweightHttpWagonAuthenticator auth = new LightweightHttpWagonAuthenticator();
 
 		if (roleHint.startsWith("file")) {
 			return null;
 		}
 
 		if (roleHint.startsWith("http")) {
-			return new LightweightHttpWagon();
+			final LightweightHttpWagon wagon = new LightweightHttpWagon();
+			wagon.setAuthenticator(auth);
+			return wagon;
 		}
 
 		if (roleHint.startsWith("https")) {
-			return new LightweightHttpsWagon();
+			final LightweightHttpsWagon wagon = new LightweightHttpsWagon();
+			wagon.setAuthenticator(auth);
+			return wagon;
 		}
 
 		return null;
 
 	}
 
-	public void release(Wagon wagon) {
-	}
+	@Override
+	public void release(final Wagon wagon) {}
 
 }

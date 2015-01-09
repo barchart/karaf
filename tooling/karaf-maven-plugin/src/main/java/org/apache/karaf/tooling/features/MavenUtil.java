@@ -34,8 +34,7 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Writer;
-import org.apache.maven.project.MavenProject;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 
 /**
  * Util method for Maven manipulation (URL convert, metadata generation, etc).
@@ -54,16 +53,16 @@ public class MavenUtil {
      * @param name PAX URL mvn format: mvn-uri := 'mvn:' [ repository-url '!' ] group-id '/' artifact-id [ '/' [version] [ '/' [type] [ '/' classifier ] ] ] ]
      * @return aether coordinate format: <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>
      */
-    static String mvnToAether(String name) {
-        Matcher m = mvnPattern.matcher(name);
+    static String mvnToAether(final String name) {
+        final Matcher m = mvnPattern.matcher(name);
         if (!m.matches()) {
             return name;
         }
-        StringBuilder b = new StringBuilder();
+        final StringBuilder b = new StringBuilder();
         b.append(m.group(1)).append(":");//groupId
         b.append(m.group(2)).append(":");//artifactId
-        String extension = m.group(5);
-        String classifier = m.group(7);
+        final String extension = m.group(5);
+        final String classifier = m.group(7);
         if (present(classifier)) {
             if (present(extension)) {
                 b.append(extension).append(":");
@@ -80,7 +79,7 @@ public class MavenUtil {
         return b.toString();
     }
 
-    private static boolean present(String part) {
+    private static boolean present(final String part) {
         return part != null && !part.isEmpty();
     }
 
@@ -92,17 +91,17 @@ public class MavenUtil {
      * @param name aether coordinate format: <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>
      * @return PAX URL mvn format: mvn-uri := 'mvn:' [ repository-url '!' ] group-id '/' artifact-id [ '/' [version] [ '/' [type] [ '/' classifier ] ] ] ]
      */
-    static String aetherToMvn(String name) {
-        Matcher m = aetherPattern.matcher(name);
+    static String aetherToMvn(final String name) {
+        final Matcher m = aetherPattern.matcher(name);
         if (!m.matches()) {
             return name;
         }
-        StringBuilder b = new StringBuilder("mvn:");
+        final StringBuilder b = new StringBuilder("mvn:");
         b.append(m.group(1)).append("/");//groupId
         b.append(m.group(2)).append("/");//artifactId
         b.append(m.group(7));//version
-        String extension = m.group(4);
-        String classifier = m.group(6);
+        final String extension = m.group(4);
+        final String classifier = m.group(6);
         if (present(classifier)) {
             if (present(extension)) {
                 b.append("/").append(extension);
@@ -137,9 +136,9 @@ public class MavenUtil {
      * @param name the Aether coordinate format (<groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>)
      * @return the filesystem path
      */
-    static String pathFromAether(String name) {
-        DefaultArtifact artifact = new DefaultArtifact(name);
-        Artifact mavenArtifact = RepositoryUtils.toArtifact(artifact);
+    static String pathFromAether(final String name) {
+        final DefaultArtifact artifact = new DefaultArtifact(name);
+        final Artifact mavenArtifact = RepositoryUtils.toArtifact(artifact);
         return layout.pathOf(mavenArtifact);
     }
 
@@ -149,17 +148,17 @@ public class MavenUtil {
      * @param artifact the Maven <code>Artifact</code>.
      * @return the corresponding PAX URL mvn format (mvn:<groupId>/<artifactId>/<version>/<type>/<classifier>)
      */
-    static String artifactToMvn(Artifact artifact) {
+    static String artifactToMvn(final Artifact artifact) {
         return artifactToMvn(RepositoryUtils.toArtifact(artifact));
     }
 
     /**
-     * Convert an Aether <code>org.sonatype.aether.artifact.Artifact</code> into a PAX URL mvn format.
-     *
-     * @param artifact the Aether <code>org.sonatype.aether.artifact.Artifact</code>.
-     * @return the corresponding PAX URL mvn format (mvn:<groupId>/<artifactId>/<version>/<type>/<classifier>)
-     */
-    static String artifactToMvn(org.sonatype.aether.artifact.Artifact artifact) {
+	 * Convert an Aether <code>org.eclipse.aether.artifact.Artifact</code> into a PAX URL mvn format.
+	 *
+	 * @param artifact the Aether <code>org.eclipse.aether.artifact.Artifact</code>.
+	 * @return the corresponding PAX URL mvn format (mvn:<groupId>/<artifactId>/<version>/<type>/<classifier>)
+	 */
+	static String artifactToMvn(final org.eclipse.aether.artifact.Artifact artifact) {
         String bundleName;
         if (artifact.getExtension().equals("jar") && isEmpty(artifact.getClassifier())) {
             bundleName = String.format("mvn:%s/%s/%s", artifact.getGroupId(), artifact.getArtifactId(), artifact.getBaseVersion());
@@ -173,14 +172,14 @@ public class MavenUtil {
         return bundleName;
     }
 
-    private static boolean isEmpty(String classifier) {
+    private static boolean isEmpty(final String classifier) {
         return classifier == null || classifier.length() == 0;
     }
-    
+
     static Artifact mvnToArtifact(String name) {
         name = mvnToAether(name);
-        DefaultArtifact artifact = new DefaultArtifact(name);
-        Artifact mavenArtifact = RepositoryUtils.toArtifact(artifact);
+        final DefaultArtifact artifact = new DefaultArtifact(name);
+        final Artifact mavenArtifact = RepositoryUtils.toArtifact(artifact);
         return mavenArtifact;
     }
 
@@ -191,20 +190,20 @@ public class MavenUtil {
      * @param target   the target maven-metadata-local.xml file to generate.
      * @throws IOException if the maven-metadata-local.xml can't be generated.
      */
-    static void generateMavenMetadata(Artifact artifact, File target) throws IOException {
+    static void generateMavenMetadata(final Artifact artifact, final File target) throws IOException {
         target.getParentFile().mkdirs();
-        Metadata metadata = new Metadata();
+        final Metadata metadata = new Metadata();
         metadata.setGroupId(artifact.getGroupId());
         metadata.setArtifactId(artifact.getArtifactId());
         metadata.setVersion(artifact.getVersion());
         metadata.setModelVersion("1.1.0");
 
-        Versioning versioning = new Versioning();
+        final Versioning versioning = new Versioning();
         versioning.setLastUpdatedTimestamp(new Date(System.currentTimeMillis()));
-        Snapshot snapshot = new Snapshot();
+        final Snapshot snapshot = new Snapshot();
         snapshot.setLocalCopy(true);
         versioning.setSnapshot(snapshot);
-        SnapshotVersion snapshotVersion = new SnapshotVersion();
+        final SnapshotVersion snapshotVersion = new SnapshotVersion();
         snapshotVersion.setClassifier(artifact.getClassifier());
         snapshotVersion.setVersion(artifact.getVersion());
         snapshotVersion.setExtension(artifact.getType());
@@ -213,18 +212,18 @@ public class MavenUtil {
 
         metadata.setVersioning(versioning);
 
-        MetadataXpp3Writer metadataWriter = new MetadataXpp3Writer();
-        Writer writer = new FileWriter(target);
+        final MetadataXpp3Writer metadataWriter = new MetadataXpp3Writer();
+        final Writer writer = new FileWriter(target);
         metadataWriter.write(writer, metadata);
     }
-    
-    static String getFileName(Artifact artifact) {
-        String name = artifact.getArtifactId() + "-" + artifact.getBaseVersion()
+
+    static String getFileName(final Artifact artifact) {
+        final String name = artifact.getArtifactId() + "-" + artifact.getBaseVersion()
             + (artifact.getClassifier() != null ? "-" + artifact.getClassifier() : "") + "." + artifact.getType();
         return name;
     }
-    
-    static String getDir(Artifact artifact) {
+
+    static String getDir(final Artifact artifact) {
         return artifact.getGroupId().replace('.', '/') + "/" + artifact.getArtifactId() + "/" + artifact.getBaseVersion() + "/";
     }
 

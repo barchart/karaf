@@ -20,15 +20,11 @@
 
 package org.apache.karaf.tooling.features;
 
-import org.junit.Test;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
-
-import static org.apache.karaf.tooling.features.MavenUtil.aetherToMvn;
-import static org.apache.karaf.tooling.features.MavenUtil.artifactToMvn;
-import static org.apache.karaf.tooling.features.MavenUtil.mvnToAether;
-import static org.apache.karaf.tooling.features.MavenUtil.pathFromAether;
-import static org.apache.karaf.tooling.features.MavenUtil.pathFromMaven;
+import static org.apache.karaf.tooling.features.MavenUtil.*;
 import static org.junit.Assert.assertEquals;
+
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.junit.Test;
 
 public class MavenUtilTest {
 
